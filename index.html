@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Registro de Finanzas</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" href="icon.svg">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Identidad (Pagador) -->
+        <header class="section card slide-down">
+            <h2 class="section-title">¿Quién paga?</h2>
+            <div class="identities" id="identity-container">
+                <button type="button" class="identity-btn" data-id="Familia">Familia</button>
+                <button type="button" class="identity-btn" data-id="Papá">Papá</button>
+                <button type="button" class="identity-btn" data-id="Mamá">Mamá</button>
+                <button type="button" class="identity-btn" data-id="Niños">Niños</button>
+            </div>
+            <p id="identity-error" class="error-msg"></p>
+        </header>
+
+        <form id="finance-form" class="fade-in">
+            <!-- Selector de Cuenta Toggle -->
+            <div class="section card account-section">
+                <h2 class="section-title">Cuenta</h2>
+                <div class="account-toggle" id="account-toggle-container">
+                    <select id="cuenta" name="cuenta" class="form-input select-styled">
+                        <!-- Cargado dinámicamente -->
+                        <option value="Gasto Personal">Gasto Personal</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section card form-grid">
+                
+                <!-- Gasto o Ingreso (Control visual para el nº negativo) -->
+                <div class="form-group span-2 flex-center toggle-nature">
+                     <label class="radio-label">
+                        <input type="radio" name="nature" value="gasto" checked>
+                        <span class="custom-radio red">Gasto</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="nature" value="ingreso">
+                        <span class="custom-radio green">Ingreso</span>
+                    </label>
+                </div>
+
+                <!-- Importe -->
+                <div class="form-group span-2">
+                    <div class="amount-wrapper">
+                        <span class="currency">€</span>
+                        <input type="number" id="importe" inputmode="decimal" step="0.01" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <!-- Concepto -->
+                <div class="form-group span-2">
+                    <label for="concepto">Concepto</label>
+                    <input type="text" id="concepto" class="form-input" placeholder="Ej: Compra supermercado" required>
+                </div>
+
+                <!-- Categoría -->
+                <div class="form-group">
+                    <label for="categoria">Categoría</label>
+                    <div class="select-wrapper">
+                        <select id="categoria" class="form-input select-styled" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Método -->
+                <div class="form-group">
+                    <label for="metodo">Método</label>
+                    <div class="select-wrapper">
+                        <select id="metodo" class="form-input select-styled" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Fecha -->
+                <div class="form-group">
+                    <label for="fecha">Fecha</label>
+                    <input type="date" id="fecha" class="form-input" required>
+                </div>
+
+                <!-- Tipo de Movimiento -->
+                <div class="form-group">
+                    <label for="tipoMovimiento">Movimiento</label>
+                    <div class="select-wrapper">
+                        <select id="tipoMovimiento" class="form-input select-styled">
+                            <option value="Flujo Real" selected>Flujo Real</option>
+                            <option value="Traspaso">Traspaso</option>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Botón Guardar -->
+            <div class="action-footer">
+                <button type="submit" id="btn-submit" class="btn-primary">
+                    <span class="btn-text">GUARDAR REGISTRO</span>
+                    <span class="loader hidden"></span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Historial -->
+        <div class="section card history-section fade-in delay-1">
+            <h2 class="section-title">Últimos Registros</h2>
+            <div id="history-list" class="history-list">
+                <div class="history-placeholder">Cargando historial...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal Configuración Apps Script -->
+    <div id="config-modal" class="modal hidden">
+        <div class="modal-content card">
+            <h2>Configuración API</h2>
+            <p>Introduce la URL de tu Web App de Google Apps Script para conectar la aplicación.</p>
+            <input type="text" id="api-url" class="form-input" placeholder="https://script.google.com/macros/s/.../exec">
+            <button id="btn-save-api" class="btn-primary" style="margin-top: 15px;">Guardar Conexión</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
