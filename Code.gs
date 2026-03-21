@@ -7,48 +7,60 @@ function doGet(e) {
   const colCategoria = findColumnIndex(headers, 'CATEGORÍA') || findColumnIndex(headers, 'CATEGORIA');
   const colMetodo = findColumnIndex(headers, 'MÉTODO') || findColumnIndex(headers, 'METODO');
   
-  // Obtener opciones dinámicas leyendo los desplegables configurados
   let cuentas = colCuenta > 0 ? getUniqueValues(sheet, colCuenta) : [];
   if (cuentas.length === 0) cuentas = ['Gasto Personal', 'Gasto empresarial', 'Ahorros'];
   
   let categorias = colCategoria > 0 ? getUniqueValues(sheet, colCategoria) : [];
   if (categorias.length === 0) categorias = ['Alimentación', 'Ocio', 'Servicios', 'Otros', 'Hijos'];
+  // ORDEN ALFABÉTICO REQUERIDO:
+  categorias.sort((a,b) => String(a).localeCompare(String(b), 'es', {sensitivity: 'base'}));
 
   let metodos = colMetodo > 0 ? getUniqueValues(sheet, colMetodo) : [];
   if (metodos.length === 0) metodos = ['Tarjeta', 'Efectivo', 'Bizum'];
   
-  // Historial: Buscamos y ordenamos por FECHA en lugar de coger simplemente los de abajo
   let history = [];
-  const lastRow = Math.max(2, sheet.getLastRow()); // Al menos la fila 2
+  const lastRow = Math.max(2, sheet.getLastRow()); 
   
   if (lastRow > 1) {
-    let data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+    let rawData = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
     
-    // Filtrar filas completamente vacías
-    data = data.filter(row => row.join('').trim() !== '');
+    // Mapear el índice original para saber qué fila editar (row = idx + 2)
+    let dataMap = rawData.map((row, idx) => ({ rowData: row, rowIndex: idx + 2 }));
     
-    // Asignar columnas correctas dinámicamente
-    const cFecha = findColumnIndex(headers, 'FECHA') || 1;
-    const cConcepto = findColumnIndex(headers, 'CONCEPTO') || 5; 
-    const cImporte = findColumnIndex(headers, 'IMPORTE') || 4;
+    // Filtrar vacíos
+    dataMap = dataMap.filter(obj => obj.rowData.join('').trim() !== '');
     
-    // Ordenar el array entero de más reciente a más antiguo leyendo la fecha
-    data.sort((a, b) => {
-      const dateA = new Date(a[cFecha - 1]);
-      const dateB = new Date(b[cFecha - 1]);
+    const cFecha = findColumnIndex(headers, 'FECHA');
+    const cConcepto = findColumnIndex(headers, 'CONCEPTO'); 
+    const cImporte = findColumnIndex(headers, 'IMPORTE');
+    const cPagador = findColumnIndex(headers, 'PAGADOR');
+    const cCategoria = colCategoria;
+    const cMetodo = colMetodo;
+    const cCuenta = colCuenta;
+    const cTipo = findColumnIndex(headers, 'TIPO DE MOVIMIENTO') || findColumnIndex(headers, 'MOVIMIENTO');
+    
+    dataMap.sort((a, b) => {
+      const dateA = new Date(cFecha > 0 ? a.rowData[cFecha - 1] : 0);
+      const dateB = new Date(cFecha > 0 ? b.rowData[cFecha - 1] : 0);
       const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
       const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
-      return timeB - timeA; // Queremos descendente: la mayor/última fecha (timeB) antes
+      return timeB - timeA; 
     });
     
-    // Tomar solo el "Top 5" más recientes
-    const top5Rows = data.slice(0, 5);
+    const top5Rows = dataMap.slice(0, 5);
     
     for (let i = 0; i < top5Rows.length; i++) {
+        let rData = top5Rows[i].rowData;
         history.push({
-           fecha: top5Rows[i][cFecha - 1], 
-           concepto: top5Rows[i][cConcepto - 1] || 'Sin concepto',
-           importe: top5Rows[i][cImporte - 1] || 0
+           rowNumber: top5Rows[i].rowIndex, // CRÍTICO: Saber la fila
+           fecha: cFecha > 0 ? rData[cFecha - 1] : '', 
+           concepto: cConcepto > 0 ? rData[cConcepto - 1] : '',
+           importe: cImporte > 0 ? rData[cImporte - 1] : '',
+           pagador: cPagador > 0 ? rData[cPagador - 1] : '',
+           categoria: cCategoria > 0 ? rData[cCategoria - 1] : '',
+           metodo: cMetodo > 0 ? rData[cMetodo - 1] : '',
+           cuenta: cCuenta > 0 ? rData[cCuenta - 1] : '',
+           tipoMovimiento: cTipo > 0 ? rData[cTipo - 1] : ''
         });
     }
   }
@@ -57,29 +69,23 @@ function doGet(e) {
     cuentas: cuentas,
     categorias: categorias,
     metodos: metodos,
-    historial: history // Ya está ordenado, no hace falta hacer reverse()
+    historial: history 
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
-// NUEVA POTENCIA: Leer las reglas de "menú desplegable" fijadas en la fila 2 de esa columna
 function getUniqueValues(sheet, colIndex) {
-  // Primero intentamos extraer las opciones del "menú desplegable" de Validación de datos
   const rule = sheet.getRange(2, colIndex).getDataValidation();
   if (rule) {
     const criteriaType = rule.getCriteriaType();
-    // Si la validación es una lista escrita manualmente (Ej: "Opción A, Opción B"):
     if (criteriaType === SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST) {
       return rule.getCriteriaValues()[0];
-    } 
-    // Si la validación lee de un rango definido (Ej: "=Configuración!A:A"):
-    else if (criteriaType === SpreadsheetApp.DataValidationCriteria.VALUE_IN_RANGE) {
+    } else if (criteriaType === SpreadsheetApp.DataValidationCriteria.VALUE_IN_RANGE) {
       const range = rule.getCriteriaValues()[0];
       const vals = range.getValues().map(r => r[0]).filter(v => v !== "" && v != null);
       if (vals.length > 0) return [...new Set(vals)];
     }
   }
   
-  // Si no detecta regla de Validación de Datos, leemos las palabras únicas escritas en toda la columna
   const lastRow = Math.max(2, sheet.getLastRow());
   const values = sheet.getRange(2, colIndex, lastRow - 1, 1).getValues();
   const unique = [...new Set(values.map(r => r[0]).filter(v => v !== "" && v != null))];
@@ -98,7 +104,7 @@ function findColumnIndex(headers, searchName) {
 function doPost(e) {
   try {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    const lastCol = Math.max(1, sheet.getLastColumn());
+    let lastCol = Math.max(1, sheet.getLastColumn());
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
     const params = e.parameter; 
     
@@ -134,7 +140,16 @@ function doPost(e) {
         
         rowData.push(value);
       });
-      sheet.appendRow(rowData);
+      
+      const action = params.action || 'add';
+      const targetRow = params.rowNumber ? parseInt(params.rowNumber) : 0;
+      
+      if (action === 'edit' && targetRow >= 2) {
+         // Sobrescribimos el rango exacto de la fila editada
+         sheet.getRange(targetRow, 1, 1, headers.length).setValues([rowData]);
+      } else {
+         sheet.appendRow(rowData);
+      }
     }
     
     return ContentService.createTextOutput(JSON.stringify({"status": "Exito"}))
