@@ -323,7 +323,7 @@ if(navRegistro && navAnalisis) {
 
 function renderDashboard() {
     if (!appDataGlobal) return;
-    const { presupuestos, gastosMensuales, objetivos } = appDataGlobal;
+    const { presupuestos, gastosMensuales, objetivos, gastosEmpresariales, ingresosEmpresariales } = appDataGlobal;
     
     // 1. Presupuestos, Ingresos y Gastos
     const presContainer = document.getElementById('presupuesto-container');
@@ -386,6 +386,43 @@ function renderDashboard() {
         
         if (cuentaGastos === 0) presContainer.innerHTML = '<p class="history-placeholder">Sin límites de gasto configurados.</p>';
         if (cuentaIngresos === 0) ingContainer.innerHTML = '<p class="history-placeholder">Sin previsión de ingresos configurada.</p>';
+    }
+
+    // 1.5 Control Empresarial
+    const empContainer = document.getElementById('empresarial-container');
+    if (empContainer) {
+        let totalGastosEmp = 0;
+        let totalIngresosEmp = 0;
+        
+        if (gastosEmpresariales) {
+            Object.values(gastosEmpresariales).forEach(val => totalGastosEmp += val);
+        }
+        if (ingresosEmpresariales) {
+            Object.values(ingresosEmpresariales).forEach(val => totalIngresosEmp += val);
+        }
+
+        if (totalGastosEmp > 0 || totalIngresosEmp > 0) {
+            const fmtGest = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(totalGastosEmp);
+            const fmtIng = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(totalIngresosEmp);
+            const balance = totalIngresosEmp - totalGastosEmp;
+            const fmtBal = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(balance);
+
+            empContainer.innerHTML = `
+               <div class="progress-group" style="margin-bottom: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-weight: 500;">
+                     <span>Ingresos Emp.</span><span style="color: var(--success-color);">${fmtIng}</span>
+                  </div>
+               </div>
+               <div class="progress-group" style="margin-bottom: 8px;">
+                  <div style="display: flex; justify-content: space-between; font-weight: 500;">
+                     <span>Gastos Emp.</span><span style="color: var(--danger-color);">${fmtGest}</span>
+                  </div>
+               </div>
+               <div style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px; display: flex; justify-content: space-between; font-weight: 600;">
+                   <span>Balance Emp.</span><span style="color: ${balance >= 0 ? 'var(--success-color)' : 'var(--danger-color)'}">${fmtBal}</span>
+               </div>
+            `;
+        }
     }
 
     // 2. Objetivos

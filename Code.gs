@@ -21,6 +21,8 @@ function doGet(e) {
   let history = [];
   let gastosMensuales = {};
   let ingresosMensuales = {};
+  let gastosEmpresariales = {};
+  let ingresosEmpresariales = {};
   const lastRow = Math.max(2, sheet.getLastRow()); 
   
   if (lastRow > 1) {
@@ -61,10 +63,22 @@ function doGet(e) {
          let impRaw = cImporte > 0 ? rData[cImporte - 1] : 0;
          let imp = parseFloat(String(impRaw).replace(',', '.'));
          if (isNaN(imp)) imp = 0;
+         
+         let cuenta = cCuenta > 0 ? String(rData[cCuenta - 1]).toLowerCase().trim() : '';
+         let isEmpresarial = (cuenta === 'gasto empresarial' || cuenta === 'empresarial' || cuenta === 'ingreso empresarial');
+         
          if (imp < 0) {
-            gastosMensuales[cat] = (gastosMensuales[cat] || 0) + Math.abs(imp);
+            if (isEmpresarial) {
+               gastosEmpresariales[cat] = (gastosEmpresariales[cat] || 0) + Math.abs(imp);
+            } else {
+               gastosMensuales[cat] = (gastosMensuales[cat] || 0) + Math.abs(imp);
+            }
          } else if (imp > 0) {
-            ingresosMensuales[cat] = (ingresosMensuales[cat] || 0) + Math.abs(imp);
+            if (isEmpresarial) {
+               ingresosEmpresariales[cat] = (ingresosEmpresariales[cat] || 0) + Math.abs(imp);
+            } else {
+               ingresosMensuales[cat] = (ingresosMensuales[cat] || 0) + Math.abs(imp);
+            }
          }
       }
     });
@@ -163,6 +177,8 @@ function doGet(e) {
     historial: history,
     gastosMensuales: gastosMensuales,
     ingresosMensuales: ingresosMensuales,
+    gastosEmpresariales: gastosEmpresariales,
+    ingresosEmpresariales: ingresosEmpresariales,
     presupuestos: presupuestosArray,
     objetivos: objetivosArray
   })).setMimeType(ContentService.MimeType.JSON);
