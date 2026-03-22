@@ -444,3 +444,87 @@ label {
   color: var(--text-muted);
   margin: 10px 0 20px;
 }
+
+/* Modulos Nuevos: Navegación y Análisis */
+.nav-tabs {
+  display: flex;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  gap: 8px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.nav-btn {
+  flex: 1;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-btn.active {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--accent);
+}
+
+.budget-list, .goals-list, .insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.progress-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.progress-track {
+  height: 10px;
+  background-color: var(--bg-input);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.fill-good { background-color: var(--success); }
+.fill-warning { background-color: #f59e0b; }
+.fill-danger { background-color: var(--danger); }
+.fill-neutral { background-color: var(--accent); }
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background-color: var(--bg-input);
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--accent);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.insight-item.positive { border-left-color: var(--success); }
+.insight-item.negative { border-left-color: var(--danger); }
+.insight-icon { font-size: 1.2rem; }

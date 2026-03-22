@@ -103,7 +103,13 @@ function doGet(e) {
 
       for (let i = 1; i < pData.length; i++) {
         let row = pData[i];
-        let pMonth = cPMes > 0 ? parseInt(row[cPMes - 1]) : 0;
+        let pMonthRaw = cPMes > 0 ? row[cPMes - 1] : 0;
+        let pMonth = parseInt(pMonthRaw);
+        if (isNaN(pMonth)) {
+            const mStr = String(pMonthRaw).toLowerCase().trim();
+            const mArr = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+            pMonth = mArr.indexOf(mStr) + 1;
+        }
         let pYear = cPAno > 0 ? parseInt(row[cPAno - 1]) : 0;
         
         if (pMonth === currMonth && pYear === currYear) {
