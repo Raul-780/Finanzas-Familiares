@@ -321,11 +321,12 @@ label {
   margin-top: 12px;
 }
 
+#view-registro,
+#finance-form,
 #view-analisis {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 16px;
 }
 
 .history-item {

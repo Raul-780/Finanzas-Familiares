@@ -356,7 +356,7 @@ function renderDashboard() {
                 else if (porcentaje < 100) colorClase = 'fill-warning';
                 else colorClase = 'fill-good';
             } else {
-                if (porcentaje >= 100) colorClase = 'fill-danger';
+                if (porcentaje > 100) colorClase = 'fill-danger';
                 else if (porcentaje >= 80) colorClase = 'fill-warning';
             }
 
@@ -453,8 +453,11 @@ function generarInsights(presupuestos, gastosMensuales, objetivos) {
             const gastado = gastosMensuales && gastosMensuales[p.categoria] ? gastosMensuales[p.categoria] : 0;
             const porcentaje = p.limite > 0 ? (gastado / p.limite) * 100 : 0;
 
-            if (porcentaje >= 100) {
+            if (porcentaje > 100) {
                 insContainer.innerHTML += `<div class="insight-item negative"><span class="insight-icon">⚠️</span><div>Has superado tu presupuesto de <b>${p.categoria}</b>. Intenta reducir gastos aquí.</div></div>`;
+                hasInsights = true;
+            } else if (porcentaje === 100) {
+                insContainer.innerHTML += `<div class="insight-item"><span class="insight-icon">👀</span><div>Has consumido exactamente el 100% de <b>${p.categoria}</b>.</div></div>`;
                 hasInsights = true;
             } else if (porcentaje >= 80) {
                 insContainer.innerHTML += `<div class="insight-item"><span class="insight-icon">👀</span><div>Ojo con <b>${p.categoria}</b>, estás al ${Math.round(porcentaje)}% de tu límite.</div></div>`;
