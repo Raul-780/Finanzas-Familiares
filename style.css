@@ -321,7 +321,7 @@ label {
   margin-top: 12px;
 }
 
-#analisis-section {
+#view-analisis {
   display: flex;
   flex-direction: column;
   gap: 16px;
