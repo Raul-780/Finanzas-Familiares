@@ -20,6 +20,7 @@ function doGet(e) {
   
   let history = [];
   let gastosMensuales = {};
+  let ingresosMensuales = {};
   const lastRow = Math.max(2, sheet.getLastRow()); 
   
   if (lastRow > 1) {
@@ -62,6 +63,8 @@ function doGet(e) {
          if (isNaN(imp)) imp = 0;
          if (imp < 0) {
             gastosMensuales[cat] = (gastosMensuales[cat] || 0) + Math.abs(imp);
+         } else if (imp > 0) {
+            ingresosMensuales[cat] = (ingresosMensuales[cat] || 0) + Math.abs(imp);
          }
       }
     });
@@ -159,6 +162,7 @@ function doGet(e) {
     metodos: metodos,
     historial: history,
     gastosMensuales: gastosMensuales,
+    ingresosMensuales: ingresosMensuales,
     presupuestos: presupuestosArray,
     objetivos: objetivosArray
   })).setMimeType(ContentService.MimeType.JSON);

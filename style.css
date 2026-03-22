@@ -321,6 +321,13 @@ label {
   margin-top: 12px;
 }
 
+#analisis-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
 .history-item {
   display: flex;
   justify-content: space-between;

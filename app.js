@@ -325,35 +325,67 @@ function renderDashboard() {
     if (!appDataGlobal) return;
     const { presupuestos, gastosMensuales, objetivos } = appDataGlobal;
     
-    // 1. Presupuestos y Gastos
+    // 1. Presupuestos, Ingresos y Gastos
     const presContainer = document.getElementById('presupuesto-container');
-    if (presContainer && presupuestos && presupuestos.length > 0) {
+    const ingContainer = document.getElementById('ingresos-container');
+    
+    // Categorías consideradas ingresos para separarlas:
+    const incomeCategories = ['Nómina', 'Ingresos', 'Zumba', 'FullBody', 'Nómina Raúl', 'Nómina Eva', 'Paga Extra Raúl', 'Paga Extra Eva'];
+    
+    const ingresosMensuales = appDataGlobal.ingresosMensuales || {};
+
+    if (presContainer && ingContainer && presupuestos && presupuestos.length > 0) {
         presContainer.innerHTML = '';
+        ingContainer.innerHTML = '';
+        let cuentaIngresos = 0;
+        let cuentaGastos = 0;
+
         presupuestos.forEach(p => {
-            const gastado = gastosMensuales && gastosMensuales[p.categoria] ? gastosMensuales[p.categoria] : 0;
+            if (!p.categoria || p.limite <= 0) return;
+            
+            const isIncome = incomeCategories.includes(p.categoria);
+            const trackedObj = isIncome ? ingresosMensuales : gastosMensuales;
+            const gastado = trackedObj && trackedObj[p.categoria] ? trackedObj[p.categoria] : 0;
             const limite = p.limite;
-            const porcentaje = limite > 0 ? (gastado / limite) * 100 : 0;
+            const porcentaje = (gastado / limite) * 100;
             const porcentajeSeguro = Math.min(porcentaje, 100);
             
             let colorClase = 'fill-good';
-            if (porcentaje >= 100) colorClase = 'fill-danger';
-            else if (porcentaje >= 80) colorClase = 'fill-warning';
+            if (isIncome) {
+                if (porcentaje < 50) colorClase = 'fill-danger';
+                else if (porcentaje < 100) colorClase = 'fill-warning';
+                else colorClase = 'fill-good';
+            } else {
+                if (porcentaje >= 100) colorClase = 'fill-danger';
+                else if (porcentaje >= 80) colorClase = 'fill-warning';
+            }
 
             const fmtG = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(gastado);
             const fmtL = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(limite);
 
-            presContainer.innerHTML += `
+            const divHTML = `
                <div class="progress-group">
                   <div class="progress-header">
                      <span>${p.categoria}</span>
                      <span>${fmtG} / ${fmtL}</span>
                   </div>
-                  <div class="progress-track">
-                     <div class="progress-fill ${colorClase}" style="width: ${porcentajeSeguro}%"></div>
+                  <div class="progress-track" style="height:12px">
+                     <div class="progress-fill fade-in ${colorClase}" style="width: ${porcentajeSeguro}%"></div>
                   </div>
                </div>
             `;
+            
+            if (isIncome) {
+                ingContainer.innerHTML += divHTML;
+                cuentaIngresos++;
+            } else {
+                presContainer.innerHTML += divHTML;
+                cuentaGastos++;
+            }
         });
+        
+        if (cuentaGastos === 0) presContainer.innerHTML = '<p class="history-placeholder">Sin límites de gasto configurados.</p>';
+        if (cuentaIngresos === 0) ingContainer.innerHTML = '<p class="history-placeholder">Sin previsión de ingresos configurada.</p>';
     }
 
     // 2. Objetivos
