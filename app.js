@@ -22,6 +22,7 @@ const historyList = document.getElementById('history-list');
 let selectedIdentity = null;
 let editingRowNumber = null;
 let fullHistoryArray = [];
+let appDataGlobal = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -90,7 +91,9 @@ async function fetchAppData() {
         populateSelect(metodoSelect, data.metodos, '');
         
         fullHistoryArray = data.historial;
+        appDataGlobal = data;
         renderHistory();
+        if(typeof renderDashboard === 'function') renderDashboard();
     } catch (error) {
         console.error('Error fetching data:', error);
         alert('Error al conectar con Google Sheets. Comprueba tu URL.');
@@ -292,6 +295,167 @@ function setLoading(isLoading) {
         btnText.classList.remove('hidden');
         loader.classList.add('hidden');
         btnSubmit.disabled = false;
+    }
+}
+
+// --- NAVEGACIÓN Y DASHBOARD ---
+const navRegistro = document.getElementById('nav-registro');
+const navAnalisis = document.getElementById('nav-analisis');
+const viewRegistro = document.getElementById('view-registro');
+const viewAnalisis = document.getElementById('view-analisis');
+
+if(navRegistro && navAnalisis) {
+    navRegistro.addEventListener('click', () => {
+        navRegistro.classList.add('active');
+        navAnalisis.classList.remove('active');
+        viewRegistro.classList.remove('hidden');
+        viewAnalisis.classList.add('hidden');
+    });
+
+    navAnalisis.addEventListener('click', () => {
+        navAnalisis.classList.add('active');
+        navRegistro.classList.remove('active');
+        viewAnalisis.classList.remove('hidden');
+        viewRegistro.classList.add('hidden');
+        renderDashboard();
+    });
+}
+
+function renderDashboard() {
+    if (!appDataGlobal) return;
+    const { presupuestos, gastosMensuales, objetivos } = appDataGlobal;
+    
+    // 1. Presupuestos y Gastos
+    const presContainer = document.getElementById('presupuesto-container');
+    if (presContainer && presupuestos && presupuestos.length > 0) {
+        presContainer.innerHTML = '';
+        presupuestos.forEach(p => {
+            const gastado = gastosMensuales && gastosMensuales[p.categoria] ? gastosMensuales[p.categoria] : 0;
+            const limite = p.limite;
+            const porcentaje = limite > 0 ? (gastado / limite) * 100 : 0;
+            const porcentajeSeguro = Math.min(porcentaje, 100);
+            
+            let colorClase = 'fill-good';
+            if (porcentaje >= 100) colorClase = 'fill-danger';
+            else if (porcentaje >= 80) colorClase = 'fill-warning';
+
+            const fmtG = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(gastado);
+            const fmtL = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(limite);
+
+            presContainer.innerHTML += `
+               <div class="progress-group">
+                  <div class="progress-header">
+                     <span>${p.categoria}</span>
+                     <span>${fmtG} / ${fmtL}</span>
+                  </div>
+                  <div class="progress-track">
+                     <div class="progress-fill ${colorClase}" style="width: ${porcentajeSeguro}%"></div>
+                  </div>
+               </div>
+            `;
+        });
+    }
+
+    // 2. Objetivos
+    const objContainer = document.getElementById('objetivos-container');
+    if (objContainer && objetivos && objetivos.length > 0) {
+        objContainer.innerHTML = '';
+        objetivos.forEach(o => {
+            const meta = o.meta;
+            const actual = o.actual;
+            const porcentaje = meta > 0 ? (actual / meta) * 100 : 0;
+            const porcentajeSeguro = Math.min(porcentaje, 100);
+            
+            const fmtA = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(actual);
+            const fmtM = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(meta);
+
+            let fechaHtml = '';
+            if (o.fechaLimite) {
+                const f = new Date(o.fechaLimite);
+                if (!isNaN(f.getTime())) {
+                    const diffDias = Math.ceil((f.getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+                    let colorDias = 'color: var(--text-muted);';
+                    let textoDias = `(Faltan ${diffDias} días)`;
+                    
+                    if (diffDias < 0) {
+                        colorDias = 'color: #fca5a5;'; // Red
+                        textoDias = `(Venció hace ${Math.abs(diffDias)} días)`;
+                    } else if (diffDias <= 15 && porcentaje < 100) {
+                        colorDias = 'color: #fcd34d;'; // Amber
+                    }
+                    if (porcentaje >= 100) {
+                        textoDias = `(¡Conseguido!)`;
+                        colorDias = 'color: #6ee7b7;'; // Green
+                    }
+                    
+                    fechaHtml = `<div style="font-size: 0.75rem; margin-top: 6px; font-weight: 500; ${colorDias}">📅 Límite: ${f.toLocaleDateString('es-ES')} ${textoDias}</div>`;
+                }
+            }
+
+            objContainer.innerHTML += `
+               <div class="progress-group">
+                  <div class="progress-header">
+                     <span>${o.nombre}</span>
+                     <span>${fmtA} / ${fmtM}</span>
+                  </div>
+                  <div class="progress-track">
+                     <div class="progress-fill fill-neutral" style="width: ${porcentajeSeguro}%"></div>
+                  </div>
+                  ${fechaHtml}
+               </div>
+            `;
+        });
+    }
+
+    generarInsights(presupuestos, gastosMensuales, objetivos);
+}
+
+function generarInsights(presupuestos, gastosMensuales, objetivos) {
+    const insContainer = document.getElementById('insights-container');
+    if (!insContainer) return;
+    insContainer.innerHTML = '';
+    let hasInsights = false;
+
+    if (presupuestos && presupuestos.length > 0) {
+        presupuestos.forEach(p => {
+            const gastado = gastosMensuales && gastosMensuales[p.categoria] ? gastosMensuales[p.categoria] : 0;
+            const porcentaje = p.limite > 0 ? (gastado / p.limite) * 100 : 0;
+
+            if (porcentaje >= 100) {
+                insContainer.innerHTML += `<div class="insight-item negative"><span class="insight-icon">⚠️</span><div>Has superado tu presupuesto de <b>${p.categoria}</b>. Intenta reducir gastos aquí.</div></div>`;
+                hasInsights = true;
+            } else if (porcentaje >= 80) {
+                insContainer.innerHTML += `<div class="insight-item"><span class="insight-icon">👀</span><div>Ojo con <b>${p.categoria}</b>, estás al ${Math.round(porcentaje)}% de tu límite.</div></div>`;
+                hasInsights = true;
+            }
+        });
+    }
+
+    if (objetivos && objetivos.length > 0) {
+        let completados = 0;
+        objetivos.forEach(o => {
+            if (o.actual >= o.meta && o.meta > 0) {
+                completados++;
+            } else if (o.fechaLimite && o.meta > 0) {
+                const f = new Date(o.fechaLimite);
+                const hoy = new Date();
+                const diffDias = Math.ceil((f.getTime() - hoy.getTime()) / (1000 * 3600 * 24));
+                const porcentaje = (o.actual / o.meta) * 100;
+                
+                if (diffDias > 0 && diffDias <= 30 && porcentaje < 100) {
+                    insContainer.innerHTML += `<div class="insight-item"><span class="insight-icon">⏰</span><div>Te faltan ${diffDias} días para el objetivo límite de <b>${o.nombre}</b> y llevas el ${Math.round(porcentaje)}%. ¡Último esfuerzo!</div></div>`;
+                    hasInsights = true;
+                }
+            }
+        });
+        if (completados > 0) {
+            insContainer.innerHTML += `<div class="insight-item positive"><span class="insight-icon">🎉</span><div>¡Felicidades! Has completado ${completados} objetivo(s). Buen trabajo.</div></div>`;
+            hasInsights = true;
+        }
+    }
+
+    if (!hasInsights) {
+        insContainer.innerHTML = `<div class="insight-item positive"><span class="insight-icon">📈</span><div>Tus finanzas van por buen camino. Sigue registrando tus movimientos.</div></div>`;
     }
 }
 

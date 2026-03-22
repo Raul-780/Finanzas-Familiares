@@ -15,7 +15,14 @@
 <body>
     <div class="app-container">
         
-        <!-- Identidad (Pagador) -->
+        <!-- Navegación Pestañas -->
+        <div class="nav-tabs slide-down">
+            <button class="nav-btn active" id="nav-registro">📝 Registro Daily</button>
+            <button class="nav-btn" id="nav-analisis">📊 Salud Financiera</button>
+        </div>
+
+        <div id="view-registro">
+            <!-- Identidad (Pagador) -->
         <header class="section card slide-down">
             <h2 class="section-title">¿Quién paga?</h2>
             <div class="identities" id="identity-container">
@@ -123,6 +130,34 @@
             <h2 class="section-title">Últimos Registros</h2>
             <div id="history-list" class="history-list">
                 <div class="history-placeholder">Cargando historial...</div>
+            </div>
+        </div>
+        </div> <!-- Cierre original view-registro -->
+
+        <!-- VISTA DE ANÁLISIS E INSIGHTS -->
+        <div id="view-analisis" class="hidden fade-in">
+            <!-- Insights Generales -->
+            <div class="section card insight-card">
+                <h2 class="section-title">💡 Tu Salud Financiera</h2>
+                <div id="insights-container" class="insights-list">
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">Cargando tus datos...</p>
+                </div>
+            </div>
+
+            <!-- Presupuesto Mensual -->
+            <div class="section card">
+                <h2 class="section-title">📊 Presupuesto del Mes</h2>
+                <div id="presupuesto-container" class="budget-list">
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">Sin datos de presupuesto configurado.<br><br>Crea una pestaña llamada <b>Presupuestos</b> en tu Google Sheets con las columnas:<br>AÑO | MES | CATEGORÍA | PRESUPUESTO</p>
+                </div>
+            </div>
+
+            <!-- Objetivos de Ahorro -->
+            <div class="section card">
+                <h2 class="section-title">🎯 Progreso de Objetivos</h2>
+                <div id="objetivos-container" class="goals-list">
+                    <p class="text-muted text-center" style="font-size: 0.9rem;">Sin objetivos activos.<br><br>Crea una pestaña llamada <b>Objetivos</b> en tu Google Sheets con las columnas:<br>NOMBRE | META | ACTUAL</p>
+                </div>
             </div>
         </div>
 

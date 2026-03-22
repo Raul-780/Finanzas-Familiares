@@ -19,6 +19,7 @@ function doGet(e) {
   if (metodos.length === 0) metodos = ['Tarjeta', 'Efectivo', 'Bizum'];
   
   let history = [];
+  let gastosMensuales = {};
   const lastRow = Math.max(2, sheet.getLastRow()); 
   
   if (lastRow > 1) {
@@ -47,6 +48,24 @@ function doGet(e) {
       return timeB - timeA; 
     });
     
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
+    dataMap.forEach(obj => {
+      let rData = obj.rowData;
+      let d = new Date(cFecha > 0 ? rData[cFecha - 1] : 0);
+      if (!isNaN(d.getTime()) && (d.getMonth() + 1) === currentMonth && d.getFullYear() === currentYear) {
+         let cat = cCategoria > 0 ? rData[cCategoria - 1] : 'Otros';
+         let impRaw = cImporte > 0 ? rData[cImporte - 1] : 0;
+         let imp = parseFloat(String(impRaw).replace(',', '.'));
+         if (isNaN(imp)) imp = 0;
+         if (imp < 0) {
+            gastosMensuales[cat] = (gastosMensuales[cat] || 0) + Math.abs(imp);
+         }
+      }
+    });
+
     const top5Rows = dataMap.slice(0, 5);
     
     for (let i = 0; i < top5Rows.length; i++) {
@@ -65,11 +84,77 @@ function doGet(e) {
     }
   }
   
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  let presupuestosArray = [];
+  let presupuestoSheet = ss.getSheetByName('Presupuestos');
+  if (presupuestoSheet) {
+    let pData = presupuestoSheet.getDataRange().getValues();
+    if (pData.length > 1) {
+      let pH = pData[0];
+      let cPAno = findColumnIndex(pH, 'AÑO');
+      let cPMes = findColumnIndex(pH, 'MES');
+      let cPCat = findColumnIndex(pH, 'CATEGORÍA') || findColumnIndex(pH, 'CATEGORIA');
+      let cPPres = findColumnIndex(pH, 'PRESUPUESTO');
+      
+      const currDate = new Date();
+      const currMonth = currDate.getMonth() + 1;
+      const currYear = currDate.getFullYear();
+
+      for (let i = 1; i < pData.length; i++) {
+        let row = pData[i];
+        let pMonth = cPMes > 0 ? parseInt(row[cPMes - 1]) : 0;
+        let pYear = cPAno > 0 ? parseInt(row[cPAno - 1]) : 0;
+        
+        if (pMonth === currMonth && pYear === currYear) {
+           presupuestosArray.push({
+             categoria: cPCat > 0 ? row[cPCat - 1] : '',
+             limite: cPPres > 0 ? parseFloat(String(row[cPPres - 1]).replace(',', '.')) : 0
+           });
+        }
+      }
+    }
+  }
+
+  let objetivosArray = [];
+  let objetivosSheet = ss.getSheetByName('Objetivos');
+  if (objetivosSheet) {
+    let oData = objetivosSheet.getDataRange().getValues();
+    if (oData.length > 1) {
+      let oH = oData[0];
+      let cONom = findColumnIndex(oH, 'NOMBRE');
+      if (cONom === 0) cONom = findColumnIndex(oH, 'OBJETIVO');
+      let cOMeta = findColumnIndex(oH, 'META');
+      if (cOMeta === 0) cOMeta = findColumnIndex(oH, 'IMPORTE OBJETIVO');
+      let cOAct = findColumnIndex(oH, 'ACTUAL');
+      if (cOAct === 0) cOAct = findColumnIndex(oH, 'AHORRADO');
+      let cOFechaLimite = findColumnIndex(oH, 'FECHA LÍMITE');
+      if (cOFechaLimite === 0) cOFechaLimite = findColumnIndex(oH, 'FECHA LIMITE');
+      
+      for (let i = 1; i < oData.length; i++) {
+        let row = oData[i];
+        let dLim = cOFechaLimite > 0 ? row[cOFechaLimite - 1] : '';
+        if (dLim instanceof Date) {
+            dLim = dLim.toISOString().split('T')[0];
+        }
+        objetivosArray.push({
+           nombre: cONom > 0 ? row[cONom - 1] : '',
+           meta: cOMeta > 0 ? parseFloat(String(row[cOMeta - 1]).replace(',', '.')) : 0,
+           actual: cOAct > 0 ? parseFloat(String(row[cOAct - 1]).replace(',', '.')) : 0,
+           fechaLimite: dLim
+        });
+      }
+    }
+  }
+
   return ContentService.createTextOutput(JSON.stringify({
     cuentas: cuentas,
     categorias: categorias,
     metodos: metodos,
-    historial: history 
+    historial: history,
+    gastosMensuales: gastosMensuales,
+    presupuestos: presupuestosArray,
+    objetivos: objetivosArray
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
