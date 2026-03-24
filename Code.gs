@@ -23,6 +23,7 @@ function doGet(e) {
   let ingresosMensuales = {};
   let gastosEmpresariales = {};
   let ingresosEmpresariales = {};
+  let totalAhorro = 0;
   const lastRow = Math.max(2, sheet.getLastRow()); 
   
   if (lastRow > 1) {
@@ -57,13 +58,19 @@ function doGet(e) {
 
     dataMap.forEach(obj => {
       let rData = obj.rowData;
+      let concepto = cConcepto > 0 ? String(rData[cConcepto - 1]).toLowerCase().trim() : '';
+      let cat = cCategoria > 0 ? String(rData[cCategoria - 1]) : 'Otros';
+      let impRaw = cImporte > 0 ? rData[cImporte - 1] : 0;
+      let imp = parseFloat(String(impRaw).replace(',', '.'));
+      if (isNaN(imp)) imp = 0;
+
+      // Acumular ahorro de todos los periodos (concepto=ahorro + categoria=traspaso)
+      if (concepto === 'ahorro' && cat.toLowerCase().trim() === 'traspaso') {
+        totalAhorro += imp;
+      }
+
       let d = new Date(cFecha > 0 ? rData[cFecha - 1] : 0);
       if (!isNaN(d.getTime()) && (d.getMonth() + 1) === currentMonth && d.getFullYear() === currentYear) {
-         let cat = cCategoria > 0 ? rData[cCategoria - 1] : 'Otros';
-         let impRaw = cImporte > 0 ? rData[cImporte - 1] : 0;
-         let imp = parseFloat(String(impRaw).replace(',', '.'));
-         if (isNaN(imp)) imp = 0;
-         
          let cuenta = cCuenta > 0 ? String(rData[cCuenta - 1]).toLowerCase().trim() : '';
          let isEmpresarial = (cuenta === 'gasto empresarial' || cuenta === 'empresarial' || cuenta === 'ingreso empresarial');
          
@@ -180,7 +187,8 @@ function doGet(e) {
     gastosEmpresariales: gastosEmpresariales,
     ingresosEmpresariales: ingresosEmpresariales,
     presupuestos: presupuestosArray,
-    objetivos: objetivosArray
+    objetivos: objetivosArray,
+    totalAhorro: totalAhorro
   })).setMimeType(ContentService.MimeType.JSON);
 }
 

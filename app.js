@@ -323,7 +323,7 @@ if(navRegistro && navAnalisis) {
 
 function renderDashboard() {
     if (!appDataGlobal) return;
-    const { presupuestos, gastosMensuales, objetivos, gastosEmpresariales, ingresosEmpresariales } = appDataGlobal;
+    const { presupuestos, gastosMensuales, objetivos, gastosEmpresariales, ingresosEmpresariales, totalAhorro } = appDataGlobal;
     
     // 1. Presupuestos, Ingresos y Gastos
     const presContainer = document.getElementById('presupuesto-container');
@@ -427,8 +427,23 @@ function renderDashboard() {
 
     // 2. Objetivos
     const objContainer = document.getElementById('objetivos-container');
-    if (objContainer && objetivos && objetivos.length > 0) {
+    if (objContainer) {
         objContainer.innerHTML = '';
+
+        // Fila de Ahorro acumulado (sin barra de progreso)
+        const ahorro = typeof totalAhorro === 'number' ? totalAhorro : 0;
+        const fmtAhorro = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(ahorro);
+        const colorAhorro = ahorro >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+        objContainer.innerHTML += `
+           <div class="progress-group" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1rem;">
+                 <span>💰 Ahorro</span>
+                 <span style="color: ${colorAhorro};">${fmtAhorro}</span>
+              </div>
+           </div>
+        `;
+    }
+    if (objContainer && objetivos && objetivos.length > 0) {
         objetivos.forEach(o => {
             const meta = o.meta;
             const actual = o.actual;
@@ -474,6 +489,9 @@ function renderDashboard() {
                </div>
             `;
         });
+    } else if (objContainer) {
+        // Sin objetivos configurados: mostrar solo el placeholder bajo la fila de ahorro
+        objContainer.innerHTML += '<p class="history-placeholder" style="margin-top:8px;">Sin objetivos activos.</p>';
     }
 
     generarInsights(presupuestos, gastosMensuales, objetivos);
