@@ -49,7 +49,8 @@ function doGet(e) {
       const dateB = new Date(cFecha > 0 ? b.rowData[cFecha - 1] : 0);
       const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
       const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
-      return timeB - timeA; 
+      if (timeB !== timeA) return timeB - timeA;
+      return b.rowIndex - a.rowIndex; 
     });
     
     const currentDate = new Date();
