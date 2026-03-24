@@ -124,8 +124,17 @@ function renderHistory() {
         historyList.innerHTML = '<div class="history-placeholder">Sin registros recientes.</div>';
         return;
     }
+
+    // Ordenar: lo más reciente primero (Fecha descendente, y si es igual, Fila descendente)
+    const sortedHistory = [...fullHistoryArray].sort((a, b) => {
+        const dateA = new Date(a.fecha).getTime();
+        const dateB = new Date(b.fecha).getTime();
+        if (dateB !== dateA) return dateB - dateA;
+        return b.rowNumber - a.rowNumber;
+    });
+
     historyList.innerHTML = '';
-    fullHistoryArray.forEach(item => {
+    sortedHistory.forEach(item => {
         const importeFloat = parseFloat(String(item.importe).replace(',', '.'));
         const isExpense = importeFloat < 0;
         const formattedAmount = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(importeFloat);
