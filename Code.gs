@@ -59,13 +59,14 @@ function doGet(e) {
     dataMap.forEach(obj => {
       let rData = obj.rowData;
       let concepto = cConcepto > 0 ? String(rData[cConcepto - 1]).toLowerCase().trim() : '';
+      let tipo = cTipo > 0 ? String(rData[cTipo - 1]).toLowerCase().trim() : '';
       let cat = cCategoria > 0 ? String(rData[cCategoria - 1]) : 'Otros';
       let impRaw = cImporte > 0 ? rData[cImporte - 1] : 0;
       let imp = parseFloat(String(impRaw).replace(',', '.'));
       if (isNaN(imp)) imp = 0;
 
-      // Acumular ahorro de todos los periodos (concepto=ahorro + categoria=traspaso)
-      if (concepto === 'ahorro' && cat.toLowerCase().trim() === 'traspaso') {
+      // Acumular ahorro de todos los periodos (concepto=ahorro + tipo de movimiento=traspaso)
+      if (concepto === 'ahorro' && tipo === 'traspaso') {
         totalAhorro += imp;
       }
 
