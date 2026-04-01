@@ -1,5 +1,4 @@
-const API_KEY = 'finance_api_url';
-let SCRIPT_URL = localStorage.getItem(API_KEY);
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZM2snpELQJKyjQIyjM4DmOTk4jCKcQEv9NKbGa-bA7rzbeIo6CmDQOmoFKjBoLvM/exec';
 
 // DOM Elements
 const form = document.getElementById('finance-form');
@@ -27,26 +26,10 @@ let appDataGlobal = null;
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     fechaInput.valueAsDate = new Date();
-
-    if (!SCRIPT_URL) {
-        document.getElementById('config-modal').classList.remove('hidden');
-    } else {
-        fetchAppData();
-    }
+    fetchAppData();
 });
 
-// Setup Config Modal
-document.getElementById('btn-save-api').addEventListener('click', () => {
-    const url = document.getElementById('api-url').value.trim();
-    if (url.startsWith('https://script.google.com/')) {
-        localStorage.setItem(API_KEY, url);
-        SCRIPT_URL = url;
-        document.getElementById('config-modal').classList.add('hidden');
-        fetchAppData();
-    } else {
-        alert('URL inválida. Debe ser una URL de Google Apps Script.');
-    }
-});
+
 
 // Identities Selection
 identities.forEach(btn => {
@@ -124,17 +107,8 @@ function renderHistory() {
         historyList.innerHTML = '<div class="history-placeholder">Sin registros recientes.</div>';
         return;
     }
-
-    // Ordenar: lo más reciente primero (Fecha descendente, y si es igual, Fila descendente)
-    const sortedHistory = [...fullHistoryArray].sort((a, b) => {
-        const dateA = new Date(a.fecha).getTime();
-        const dateB = new Date(b.fecha).getTime();
-        if (dateB !== dateA) return dateB - dateA;
-        return b.rowNumber - a.rowNumber;
-    });
-
     historyList.innerHTML = '';
-    sortedHistory.forEach(item => {
+    fullHistoryArray.forEach(item => {
         const importeFloat = parseFloat(String(item.importe).replace(',', '.'));
         const isExpense = importeFloat < 0;
         const formattedAmount = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(importeFloat);
@@ -332,7 +306,7 @@ if(navRegistro && navAnalisis) {
 
 function renderDashboard() {
     if (!appDataGlobal) return;
-    const { presupuestos, gastosMensuales, objetivos, gastosEmpresariales, ingresosEmpresariales, totalAhorro } = appDataGlobal;
+    const { presupuestos, gastosMensuales, objetivos, gastosEmpresariales, ingresosEmpresariales } = appDataGlobal;
     
     // 1. Presupuestos, Ingresos y Gastos
     const presContainer = document.getElementById('presupuesto-container');
@@ -352,7 +326,8 @@ function renderDashboard() {
         presupuestos.forEach(p => {
             if (!p.categoria || p.limite <= 0) return;
             
-            const isIncome = incomeCategories.includes(p.categoria);
+            const catBase = p.categoria.toLowerCase().trim();
+            const isIncome = incomeCategories.some(c => catBase.includes(c.toLowerCase())) || catBase.includes('nómina') || catBase.includes('ingreso');
             const trackedObj = isIncome ? ingresosMensuales : gastosMensuales;
             const gastado = trackedObj && trackedObj[p.categoria] ? trackedObj[p.categoria] : 0;
             const limite = p.limite;
@@ -436,23 +411,8 @@ function renderDashboard() {
 
     // 2. Objetivos
     const objContainer = document.getElementById('objetivos-container');
-    if (objContainer) {
-        objContainer.innerHTML = '';
-
-        // Fila de Ahorro acumulado (sin barra de progreso)
-        const ahorro = typeof totalAhorro === 'number' ? totalAhorro : 0;
-        const fmtAhorro = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(ahorro);
-        const colorAhorro = ahorro >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
-        objContainer.innerHTML += `
-           <div class="progress-group" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1rem;">
-                 <span>💰 Ahorro</span>
-                 <span style="color: ${colorAhorro};">${fmtAhorro}</span>
-              </div>
-           </div>
-        `;
-    }
     if (objContainer && objetivos && objetivos.length > 0) {
+        objContainer.innerHTML = '';
         objetivos.forEach(o => {
             const meta = o.meta;
             const actual = o.actual;
@@ -498,9 +458,6 @@ function renderDashboard() {
                </div>
             `;
         });
-    } else if (objContainer) {
-        // Sin objetivos configurados: mostrar solo el placeholder bajo la fila de ahorro
-        objContainer.innerHTML += '<p class="history-placeholder" style="margin-top:8px;">Sin objetivos activos.</p>';
     }
 
     generarInsights(presupuestos, gastosMensuales, objetivos);

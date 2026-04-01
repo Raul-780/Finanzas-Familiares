@@ -23,7 +23,6 @@ function doGet(e) {
   let ingresosMensuales = {};
   let gastosEmpresariales = {};
   let ingresosEmpresariales = {};
-  let totalAhorro = 0;
   const lastRow = Math.max(2, sheet.getLastRow()); 
   
   if (lastRow > 1) {
@@ -49,8 +48,7 @@ function doGet(e) {
       const dateB = new Date(cFecha > 0 ? b.rowData[cFecha - 1] : 0);
       const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
       const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
-      if (timeB !== timeA) return timeB - timeA;
-      return b.rowIndex - a.rowIndex; 
+      return timeB - timeA; 
     });
     
     const currentDate = new Date();
@@ -59,20 +57,13 @@ function doGet(e) {
 
     dataMap.forEach(obj => {
       let rData = obj.rowData;
-      let concepto = cConcepto > 0 ? String(rData[cConcepto - 1]).toLowerCase().trim() : '';
-      let tipo = cTipo > 0 ? String(rData[cTipo - 1]).toLowerCase().trim() : '';
-      let cat = cCategoria > 0 ? String(rData[cCategoria - 1]) : 'Otros';
-      let impRaw = cImporte > 0 ? rData[cImporte - 1] : 0;
-      let imp = parseFloat(String(impRaw).replace(',', '.'));
-      if (isNaN(imp)) imp = 0;
-
-      // Acumular ahorro de todos los periodos (concepto=ahorro + tipo de movimiento=traspaso)
-      if (concepto === 'ahorro' && tipo === 'traspaso') {
-        totalAhorro += imp;
-      }
-
       let d = new Date(cFecha > 0 ? rData[cFecha - 1] : 0);
       if (!isNaN(d.getTime()) && (d.getMonth() + 1) === currentMonth && d.getFullYear() === currentYear) {
+         let cat = cCategoria > 0 ? rData[cCategoria - 1] : 'Otros';
+         let impRaw = cImporte > 0 ? rData[cImporte - 1] : 0;
+         let imp = parseFloat(String(impRaw).replace(',', '.'));
+         if (isNaN(imp)) imp = 0;
+         
          let cuenta = cCuenta > 0 ? String(rData[cCuenta - 1]).toLowerCase().trim() : '';
          let isEmpresarial = (cuenta === 'gasto empresarial' || cuenta === 'empresarial' || cuenta === 'ingreso empresarial');
          
@@ -189,8 +180,7 @@ function doGet(e) {
     gastosEmpresariales: gastosEmpresariales,
     ingresosEmpresariales: ingresosEmpresariales,
     presupuestos: presupuestosArray,
-    objetivos: objetivosArray,
-    totalAhorro: totalAhorro
+    objetivos: objetivosArray
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
